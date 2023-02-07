@@ -54,7 +54,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: {#host#}
+  - host: 
     http:
       paths:
       - backend:
