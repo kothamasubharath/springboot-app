@@ -1,1 +1,95 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: test  
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: saaspe-microservice
+  namespace: test
+  labels:
+    app: saaspe-microservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: saaspe-microservice
+  template:
+    metadata:
+      name: saaspe-microservice
+      labels:
+        app: saaspe-microservice
+    spec:
+      containers:
+        - name: saaspe-microservice
+          image: 854086234348.dkr.ecr.us-east-2.amazonaws.com/newrepository:VERSION-4
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8081
+          livenessProbe:
+            httpGet:
+              port: 6060
+              path: /actuator/health/liveness
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              port: 6060
+              path: /actuator/health/readiness
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          # env:
+          # - name: SPRING_DATASOURCE_URL       # Postgres URL variable
+          #   valueFrom: 
+          #     configMapKeyRef:
+          #       name: saaspe-microservices-config
+          #       key: POSTGRES_URL        
+          # - name: SPRING_DATASOURCE_USERNAME    # Postgres DB User Name
+          #   valueFrom: 
+          #     configMapKeyRef:
+          #       name: saaspe-microservices-config
+          #       key: POSTGRES_USERNAME
+          # - name: SPRING_DATASOURCE_PASSWORD    # Postgres DB Password
+          #   valueFrom: 
+          #     configMapKeyRef:
+          #       name: saaspe-microservices-config
+          #       key: POSTGRES_PASSWORD
 
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: saaspe-microservice-svc
+  namespace: test
+  labels:
+    app: saaspe-microservice
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: saaspe-microservice
+  type: ClusterIP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+     name: saaspe-microservice-ingress
+  namespace: test
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: {#host#}
+    http:
+      paths:
+      - backend:
+          service:
+            name: saaspe-microservice-svc
+            port:
+              number: 8081
+        path: /
+        pathType: Prefix
+  
